@@ -7,6 +7,7 @@
 #define SENSORPIN A4
 #define LEDPIN 19
 #define COUNT 10
+#define PHASEPIN 2
 
 void setup() {
   pinMode(PWMPINPOS, OUTPUT); 
@@ -24,6 +25,9 @@ void setup() {
   // Add 1ms compare interrupt to timer 1
   OCR0A = 0xAF; // Leet AF
   TIMSK0 |= _BV(OCIE0A);
+
+  // Phase interrupt
+  attachInterrupt(digitalPinToInterrupt(PHASEPIN), phaseInterrupt, RISING);
   
   Serial.begin(9600);
   digitalWrite(LEDPIN, HIGH);
@@ -31,10 +35,19 @@ void setup() {
   //analogWrite(PWMPINNEG, 127);
 }
 
+volatile unsigned int idx = 0;
+volatile unsigned int pin = 0;
+
+volatile int last_reset;
+void phaseInterrupt() {
+  if(millis()-last_reset>15){
+    pin = 0;
+    idx=0;
+    last_reset = millis();
+  }
+}
 
 SIGNAL(TIMER0_COMPA_vect) {
-  static unsigned int idx = 0;
-  static unsigned int pin = 0;
   //floor(255.*sin(linspace(0,pi,25)))'
   const uint8_t sine256[COUNT]  = {78, 149, 206, 242, 255, 242, 206, 149, 78, 0};
   // iterate through PWM "amplitudes"
