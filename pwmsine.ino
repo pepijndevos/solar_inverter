@@ -21,7 +21,7 @@ void setup() {
   TCCR2B|=3;
   // Set Boost PWM prescale to 1
   TCCR1B&=~0b111;
-  TCCR1B|=3;
+  TCCR1B|=1;
   // Add 1ms compare interrupt to timer 1
   OCR0A = 0xAF; // Leet AF
   TIMSK0 |= _BV(OCIE0A);
@@ -31,7 +31,7 @@ void setup() {
   
   Serial.begin(9600);
   digitalWrite(LEDPIN, HIGH);
-  analogWrite(BOOSTPIN, 0);
+  analogWrite(BOOSTPIN, 255); // MOSFET driver is inverted
   //analogWrite(PWMPINNEG, 127);
 }
 
@@ -59,14 +59,14 @@ SIGNAL(TIMER0_COMPA_vect) {
 }
 
 void boost() {
-  static uint8_t i = 0;
+  static uint8_t i = 255;
   // read the value from the sensor:
   float sensorValue = analogRead(SENSORPIN);
   float voltage = sensorValue*50.0/1024.0;
-  if(voltage>15 && i>1) {
-    i--;
-  } else if(voltage<15 && i<200) {
+  if(voltage>30 && i<255) {
     i++;
+  } else if(voltage<30 && i>20) {
+    i--;
   }
   Serial.println(i);
   Serial.println(voltage);
